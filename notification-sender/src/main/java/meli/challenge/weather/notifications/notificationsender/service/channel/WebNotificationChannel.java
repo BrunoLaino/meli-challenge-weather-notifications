@@ -25,11 +25,12 @@ public class WebNotificationChannel implements NotificationChannel {
     public void send(NotificationMessageDTO message) {
         String finalText = buildNotificationText(message);
 
-        webSocketNotificationService.sendNotification(finalText);
 
         System.out.println("[WEB] Notificação salva: userId="
                 + message.getUserId()
                 + " -> " + finalText);
+
+        webSocketNotificationService.sendNotification(finalText);
     }
 
     private String buildNotificationText(NotificationMessageDTO msg) {
@@ -40,9 +41,9 @@ public class WebNotificationChannel implements NotificationChannel {
                     .append(msg.getForecast().getCityName())
                     .append(" (").append(msg.getForecast().getUf()).append(")\n");
 
-            if (msg.getForecast().getDailyForecastDTOS() != null) {
+            if (msg.getForecast().getDailyForecasts() != null) {
                 sb.append("Próximos dias:\n");
-                msg.getForecast().getDailyForecastDTOS().forEach(df -> sb.append(" - ")
+                msg.getForecast().getDailyForecasts().forEach(df -> sb.append(" - ")
                         .append(df.getDate())
                         .append(": Mín=").append(df.getMinTemp())
                         .append("°C, Máx=").append(df.getMaxTemp())
@@ -51,11 +52,11 @@ public class WebNotificationChannel implements NotificationChannel {
             }
         }
 
-        if (msg.getWaveForecastDTO() != null) {
+        if (msg.getWaveForecast() != null) {
             sb.append("\nPrevisão de Ondas para hoje:\n");
-            sb.append("Manhã: ").append(buildWavePeriod(msg.getWaveForecastDTO().getManha())).append("\n");
-            sb.append("Tarde: ").append(buildWavePeriod(msg.getWaveForecastDTO().getTarde())).append("\n");
-            sb.append("Noite: ").append(buildWavePeriod(msg.getWaveForecastDTO().getNoite())).append("\n");
+            sb.append("Manhã: ").append(buildWavePeriod(msg.getWaveForecast().getManha())).append("\n");
+            sb.append("Tarde: ").append(buildWavePeriod(msg.getWaveForecast().getTarde())).append("\n");
+            sb.append("Noite: ").append(buildWavePeriod(msg.getWaveForecast().getNoite())).append("\n");
         }
 
         return sb.toString();

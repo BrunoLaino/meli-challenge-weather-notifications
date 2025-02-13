@@ -13,5 +13,5 @@ public class NotificationMessageDTO implements Serializable {
     private Long scheduledNotificationId;
     private Long userId;
     private CityWeatherForecastDTO forecast;
-    private WaveForecastDTO waveForecastDTO;
+    private WaveForecastDTO WaveForecast;
 }
