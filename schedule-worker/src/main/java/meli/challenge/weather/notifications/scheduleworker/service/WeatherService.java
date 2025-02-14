@@ -4,6 +4,9 @@ import meli.challenge.weather.notifications.scheduleworker.feign.CptecFeignClien
 import meli.challenge.weather.notifications.scheduleworker.model.dto.*;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
@@ -29,6 +32,7 @@ public class WeatherService {
     }
 
     @Cacheable(value = "weatherCache", key = "#cityName + '_' + (#cityId != null ? #cityId : '')")
+    @Retryable(retryFor = Exception.class, maxAttempts = 3, backoff = @Backoff(delay = 2000))
     public CityWeatherForecast getForecast(String cityName, String cityId) {
         String finalCityId = cityId;
         if (finalCityId == null || finalCityId.isEmpty()) {
@@ -39,12 +43,14 @@ public class WeatherService {
     }
 
     @Cacheable(value = "waveCache", key = "#cityId")
+    @Retryable(retryFor = Exception.class, maxAttempts = 3, backoff = @Backoff(delay = 2000))
     public WaveForecast getWaveForecast(String cityId) {
         String xml = cptecFeignClient.getCityWaveForecastForDay(cityId, 0);
         return parseWaveXml(xml);
     }
 
     @Cacheable(value = "cityIdCache", key = "#cityName")
+    @Retryable(retryFor = Exception.class, maxAttempts = 3, backoff = @Backoff(delay = 2000))
     public String discoverCityIdByName(String cityName) {
         String xml = cptecFeignClient.findCitiesByName(cityName);
         List<CityInfo> list = parseXmlListaCidades(xml);
@@ -52,6 +58,24 @@ public class WeatherService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Nenhuma cidade encontrada para: " + cityName);
         }
         return list.get(0).getId();
+    }
+
+    @Recover
+    public CityWeatherForecast recoverGetForecast(Exception e, String cityName, String cityId) {
+        throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                "Não foi possível obter a previsão do tempo após várias tentativas", e);
+    }
+
+    @Recover
+    public WaveForecast recoverGetWaveForecast(Exception e, String cityId) {
+        throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                "Não foi possível obter a previsão de ondas após várias tentativas", e);
+    }
+
+    @Recover
+    public String recoverDiscoverCityIdByName(Exception e, String cityName) {
+        throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                "Não foi possível descobrir o ID da cidade após várias tentativas", e);
     }
 
     private List<CityInfo> parseXmlListaCidades(String xml) {
@@ -150,7 +174,6 @@ public class WeatherService {
     private Document parseXml(String xml) throws Exception {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
-
         ByteArrayInputStream input = new ByteArrayInputStream(xml.getBytes(StandardCharsets.ISO_8859_1));
         return builder.parse(input);
     }
