@@ -6,7 +6,6 @@ import meli.challenge.weather.notifications.notificationsender.config.RabbitConf
 import meli.challenge.weather.notifications.notificationsender.model.domain.DeadLetterRecord;
 import meli.challenge.weather.notifications.notificationsender.model.dto.DeadLetterRecordDTO;
 import meli.challenge.weather.notifications.notificationsender.repository.DeadLetterRecordRepository;
-import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.stereotype.Component;
