@@ -47,7 +47,7 @@ public class NotificationMessageProcessor {
         if (user.isOptOut()) {
             log.warn("Usuário ID: {} está em opt-out. Notificação descartada.", user.getId());
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Usuário ID" + user.getId() + " está em opt-out.");
+                    "Usuário ID: " + user.getId() + " está em opt-out.");
         }
     }
 }

@@ -16,7 +16,7 @@ public interface CptecFeignClient {
     String getFourDayCityForecast(@PathVariable("cityId") String cityId);
 
     @GetMapping("/cidade/{cityId}/dia/{day}/ondas.xml")
-    String getCityWaveForecastForDay(@PathVariable("idCidade") String cityId,
-                                     @PathVariable("dia") int day);
+    String getCityWaveForecastForDay(@PathVariable("cityId") String cityId,
+                                     @PathVariable("day") int day);
 
 }

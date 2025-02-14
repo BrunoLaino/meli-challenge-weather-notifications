@@ -10,9 +10,13 @@ import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.support.converter.DefaultJackson2JavaTypeMapper;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
 public class RabbitConfig {
@@ -37,12 +41,10 @@ public class RabbitConfig {
         return new DirectExchange(EXCHANGE_ENVIOS);
     }
 
-
     @Bean
     public Binding enviosBinding(Queue enviosQueue, DirectExchange enviosExchange) {
         return BindingBuilder.bind(enviosQueue).to(enviosExchange).with(QUEUE_ENVIOS);
     }
-
 
     @Bean
     public Queue deadLetterQueue() {
@@ -63,7 +65,34 @@ public class RabbitConfig {
     public Jackson2JsonMessageConverter jackson2JsonMessageConverter() {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
-        return new Jackson2JsonMessageConverter(mapper);
+
+        Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter(mapper);
+        DefaultJackson2JavaTypeMapper typeMapper = new DefaultJackson2JavaTypeMapper();
+
+        // Permite que o conversor confie nos pacotes onde estão os DTOs
+        typeMapper.setTrustedPackages(
+                "meli.challenge.weather.notifications.scheduleworker.model.dto",
+                "meli.challenge.weather.notifications.notificationsender.model.dto"
+        );
+
+        // Mapeamento explícito dos tipos enviados pelo produtor para as classes do consumidor
+        Map<String, Class<?>> idClassMapping = new HashMap<>();
+        idClassMapping.put(
+                "meli.challenge.weather.notifications.scheduleworker.model.dto.NotificationMessage",
+                meli.challenge.weather.notifications.notificationsender.model.dto.NotificationMessageDTO.class
+        );
+        idClassMapping.put(
+                "meli.challenge.weather.notifications.scheduleworker.model.dto.CityWeatherForecast",
+                meli.challenge.weather.notifications.notificationsender.model.dto.CityWeatherForecastDTO.class
+        );
+        idClassMapping.put(
+                "meli.challenge.weather.notifications.scheduleworker.model.dto.DeadLetterRecordDTO",
+                meli.challenge.weather.notifications.notificationsender.model.dto.CityWeatherForecastDTO.class
+        );
+        typeMapper.setIdClassMapping(idClassMapping);
+
+        converter.setJavaTypeMapper(typeMapper);
+        return converter;
     }
 
     @Bean
