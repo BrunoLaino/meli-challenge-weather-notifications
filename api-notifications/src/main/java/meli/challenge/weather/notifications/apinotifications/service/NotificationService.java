@@ -34,6 +34,7 @@ public class NotificationService {
         sn.setCityName(request.getCityName());
         sn.setScheduledTime(request.getWhen());
         sn.setSent(false);
+        sn.setFailed(false);
         return sn;
     }
 

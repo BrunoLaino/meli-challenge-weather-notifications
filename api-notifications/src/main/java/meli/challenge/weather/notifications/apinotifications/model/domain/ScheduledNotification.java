@@ -24,5 +24,6 @@ public class ScheduledNotification {
     private boolean litoranea;
     private LocalDateTime scheduledTime;
     private boolean sent;
+    private boolean failed;
 
 }

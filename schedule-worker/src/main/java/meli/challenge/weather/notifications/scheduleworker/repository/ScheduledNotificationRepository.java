@@ -10,5 +10,5 @@ import java.util.List;
 public interface ScheduledNotificationRepository extends JpaRepository<ScheduledNotification, Long> {
 
     @Transactional(readOnly = true)
-    List<ScheduledNotification> findByScheduledTimeLessThanEqualAndSentFalse(LocalDateTime now);
+    List<ScheduledNotification> findByScheduledTimeLessThanEqualAndSentFalseAndFailedFalse(LocalDateTime now);
 }

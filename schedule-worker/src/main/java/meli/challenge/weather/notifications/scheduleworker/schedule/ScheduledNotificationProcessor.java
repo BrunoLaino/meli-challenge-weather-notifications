@@ -45,7 +45,7 @@ public class ScheduledNotificationProcessor {
 
     private List<ScheduledNotification> retrieveScheduledNotifications() {
         LocalDateTime now = LocalDateTime.now();
-        return scheduledRepo.findByScheduledTimeLessThanEqualAndSentFalse(now);
+        return scheduledRepo.findByScheduledTimeLessThanEqualAndSentFalseAndFailedFalse(now);
     }
 
     private void processNotification(ScheduledNotification notification) {
@@ -56,14 +56,20 @@ public class ScheduledNotificationProcessor {
             notificationMessage = buildNotificationMessage(notification, forecast, waveForecast);
 
             notificationPublisherService.publishNotification(notificationMessage);
-            notification.setSent(true);
+            updateNotificationStatus(notification);
         } catch (Exception e) {
             log.error("Erro ao processar notificação agendada para {}: ", notification, e);
+            notification.setFailed(true);
+
             if (ObjectUtils.isEmpty(notificationMessage)) {
                 notificationMessage = buildMinimalNotificationMessage(notification);
             }
             producerDeadLetterService.sendToDeadLetter(notificationMessage, e);
         }
+    }
+
+    private static void updateNotificationStatus(ScheduledNotification notification) {
+        notification.setSent(true);
     }
 
     private CityWeatherForecast retrieveCityForecast(ScheduledNotification notification) {

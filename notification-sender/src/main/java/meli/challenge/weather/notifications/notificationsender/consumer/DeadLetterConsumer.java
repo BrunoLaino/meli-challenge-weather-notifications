@@ -19,15 +19,9 @@ public class DeadLetterConsumer {
     private final DeadLetterRecordRepository deadLetterRecordRepository;
     private final Jackson2JsonMessageConverter messageConverter;
 
-    /**
-     * Método que consome mensagens da Dead Letter Queue e salva no banco.
-     * Agora espera receber um objeto DeadLetterRecordDTO já preenchido.
-     */
     @RabbitListener(queues = RabbitConfig.DEAD_LETTER_QUEUE)
-    public void consumeDeadLetter(Message message) {
+    public void consumeDeadLetter(DeadLetterRecordDTO dto) {
         try {
-            DeadLetterRecordDTO dto = (DeadLetterRecordDTO) messageConverter.fromMessage(message);
-
             DeadLetterRecord record = new DeadLetterRecord();
             record.setPayload(dto.getPayload());
             record.setErrorDetails(dto.getErrorDetails());
