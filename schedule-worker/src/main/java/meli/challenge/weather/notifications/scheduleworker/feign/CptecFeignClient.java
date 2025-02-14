@@ -12,9 +12,10 @@ public interface CptecFeignClient {
     @GetMapping("/listaCidades")
     String findCitiesByName(@RequestParam("city") String cityName);
 
-    String getFourDayCityForecast(@PathVariable("idCidade") String cityId);
+    @GetMapping("/cidade/{cityId}/previsao.xml")
+    String getFourDayCityForecast(@PathVariable("cityId") String cityId);
 
-    @GetMapping("/cidade/{idCidade}/dia/{dia}/ondas.xml")
+    @GetMapping("/cidade/{cityId}/dia/{day}/ondas.xml")
     String getCityWaveForecastForDay(@PathVariable("idCidade") String cityId,
                                      @PathVariable("dia") int day);
 
