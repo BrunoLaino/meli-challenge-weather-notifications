@@ -12,9 +12,9 @@ Este projeto foi desenvolvido como parte de um desafio técnico para enviar noti
 3. [Fluxo Resumido](#fluxo-resumido)
 4. [Serviços e Pastas](#serviços-e-pastas)
 5. [Como Executar](#como-executar)
-    - [Requisitos](#requisitos)
-    - [Executando com Docker Compose](#executando-com-docker-compose)
-    - [Acesso aos Serviços](#acesso-aos-serviços)
+   - [Requisitos](#requisitos)
+   - [Executando com Docker Compose](#executando-com-docker-compose)
+   - [Acesso aos Serviços](#acesso-aos-serviços)
 6. [Principais Endpoints](#principais-endpoints)
 7. [Melhorias Futuras](#melhorias-futuras)
 8. [Contribuindo](#contribuindo)
@@ -27,19 +27,20 @@ Este projeto foi desenvolvido como parte de um desafio técnico para enviar noti
 O objetivo é criar uma solução para **agendar e enviar notificações** sobre o clima para usuários. Os dados de previsão do tempo são obtidos da API **CPTEC/INPE**, com capacidade de:
 
 - Obter **previsão climática** para os próximos 4 dias.
-- Obter **previsão de ondas** para cidades litorâneas no dia atual.
+- Obter **previsão de ondas** para cidades litorâneas (**dia atual**).
 - Agendar notificações em horários específicos.
 - Evitar envio para usuários opt-out.
 - Armazenar e consultar notificações enviadas.
 - Possibilitar futuras extensões para outros canais (e-mail, SMS, push, etc.).
 
-Para garantir a escalabilidade e robustez, foram utilizadas as seguintes tecnologias:
+### Tecnologias Utilizadas
+
 - **Spring Boot** (microserviços)
-- **OpenFeign** (comunicação com a API externa)
+- **OpenFeign** (comunicação com API externa)
 - **RabbitMQ** (fila de mensageria)
 - **Redis** (cache de previsões climáticas)
 - **PostgreSQL** (persistência de dados)
-- **Docker Compose** (para orquestração local)
+- **Docker Compose** (orquestração local)
 
 ---
 
@@ -47,66 +48,37 @@ Para garantir a escalabilidade e robustez, foram utilizadas as seguintes tecnolo
 
 A solução está organizada em **microserviços** independentes dentro de um único repositório. Cada microserviço tem seu próprio `Dockerfile` e pode ser escalado separadamente.
 
-```mermaid
-flowchart LR
-    A["Cliente/Front-end"] -- (1) Agendamento --> B["API de Notificações (Spring Boot)"]
-    B -- Persiste Agendamento --> D[(Database PostgreSQL)]
-    B -- Publica Mensagem de Agendamento --> E[RabbitMQ]
-
-    subgraph F["Serviço de Clima / Scheduler"]
-        F1["Scheduler/Worker"] -- (2) Consulta Cache --> G[Redis]
-        F1 -- (3) Chama Feign CPTEC --> H["API CPTEC"]
-        F1 -- Atualiza Cache --> G
-    end
-
-    E --> F1
-
-    F1 -- (4) Publica Mensagem de Envio --> E
-    subgraph I["Serviço de Envio de Notificações"]
-        I1["Consumer de Envio"] -- (5) Verifica opt-out --> D
-        I1 -- (6) Salva Notificação --> D
-    end
-    E --> I1
-    I1 -- Notificação Disponível --> A
-```
+![Fluxo do sistema](fluxoSistema.png)
 
 ---
 
 ## Fluxo Resumido
 
-1. **Criação do Agendamento**: O cliente faz uma requisição para a **API Notifications** para agendar uma notificação (cidade, data/hora).
-2. **Persistência e Fila**: A **API** grava o agendamento no banco (**PostgreSQL**) e publica uma mensagem de agendamento no **RabbitMQ**.
-3. **Scheduler (Worker)**:
-    - Verifica quais agendamentos estão prontos para envio.
-    - Obtém dados do CPTEC via **OpenFeign**, armazenando no **Redis**.
-    - Publica mensagem de envio na fila (**RabbitMQ**).
-4. **Envio de Notificações**: O **Notification Sender** consome a mensagem da fila e verifica se o usuário está opt-out. Se não estiver, registra a notificação enviada no banco de dados.
-5. **Leitura de Notificações**: O cliente pode consultar as notificações enviadas por meio da **API Notifications**.
+1. **Criação do Agendamento**: O cliente faz `POST` para **api-notifications**, informando dados da cidade e do horário de envio.
+2. **Persistência**: O microserviço **api-notifications** insere o registro em `scheduled_notifications` no **PostgreSQL**.
+3. **Leitura de Agendamentos**: Periodicamente (a cada 1 minuto), o **schedule-worker** lê os agendamentos com horário vencido e prepara a notificação (obtendo dados do CPTEC se necessário).
+4. **Publicação da Notificação**: O **schedule-worker** posta a mensagem de notificação (ou de erro) no **RabbitMQ**.
+5. **Envio de Notificações**: O **notification-sender** consome a fila, verifica se o usuário está opt-out e, caso contrário, envia a notificação via **WebSocket**.
+6. **Erros e Dead Letter Queue**: Em caso de falha, mensagens problemáticas são enviadas à *Dead Letter Queue* e registradas na tabela `dead_letter_records`.
 
 ---
 
-## Serviços e Pastas
+## Principais Endpoints
 
-Estrutura do repositório:
-
-```
-meli-challenge-weather-notifications
-├── api-notifications
-│   ├── pom.xml
-│   ├── src/...
-│   └── Dockerfile
-├── schedule-worker
-│   ├── pom.xml
-│   ├── src/...
-│   └── Dockerfile
-├── notification-sender
-│   ├── pom.xml
-│   ├── src/...
-│   └── Dockerfile
-├── docker-compose.yml
-├── README.md  <-- (este arquivo)
-└── ...
-```
+1. **Agendar Notificação**
+   - `POST /notifications/schedule`
+   - **Body Exemplo**:
+     ```json
+     {
+       "userId": 0,
+       "when": "2025-02-17T12:53:55.187Z",
+       "cityName": "string",
+       "cityId": "string",
+       "litoranea": true
+     }
+     ```
+2. **Opt-out de Usuário**
+   - `POST /notifications/users/{userId}/opt-out`
 
 ---
 
@@ -144,25 +116,18 @@ meli-challenge-weather-notifications
     - `GET /notifications?userId={id}` (listar notificações enviadas)
 
 - **RabbitMQ Management** (http://localhost:15672, usuário: guest, senha: guest)
+- 
+- **Swagger** (http://localhost:8080/swagger-ui/index.html#/)
 
 ---
 
 ## Melhorias Futuras
 
 1. Suporte a novos canais (e-mail, SMS, push etc.).
-2. Retry e tolerância a falhas (ex.: Spring Retry, circuit breaker).
-3. Autenticação/Autorização (JWT, OAuth2).
-4. Kubernetes para orquestração.
-5. Observabilidade (logs centralizados, tracing, métricas).
-6. API Gateway para unificação do acesso.
-
----
-
-## Contribuindo
-
-1. Faça um fork do projeto.
-2. Crie uma branch com sua feature ou correção.
-3. Abra um Pull Request descrevendo suas mudanças.
+2. Autenticação e Autorização.
+3. Kubernetes para orquestração.
+4. Observabilidade (logs centralizados, tracing, métricas).
+5. API Gateway para unificação do acesso.
 
 ---
 
@@ -174,4 +139,3 @@ meli-challenge-weather-notifications
 Fique à vontade para enviar dúvidas ou sugestões!
 
 Obrigado por conferir este projeto!
-
