@@ -5,7 +5,6 @@ import meli.challenge.weather.notifications.scheduleworker.model.domain.Schedule
 import meli.challenge.weather.notifications.scheduleworker.model.dto.CityWeatherForecast;
 import meli.challenge.weather.notifications.scheduleworker.model.dto.NotificationMessage;
 import meli.challenge.weather.notifications.scheduleworker.repository.ScheduledNotificationRepository;
-import meli.challenge.weather.notifications.scheduleworker.schedule.ScheduledNotificationProcessor;
 import meli.challenge.weather.notifications.scheduleworker.service.NotificationPublisherService;
 import meli.challenge.weather.notifications.scheduleworker.service.WeatherService;
 import org.junit.jupiter.api.Test;
@@ -13,9 +12,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
 import java.time.LocalDateTime;
 import java.util.List;
-import static org.junit.jupiter.api.Assertions.*;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
@@ -41,7 +43,7 @@ class ScheduledNotificationProcessorTest {
     @Test
     void testProcessScheduledNotificationsSuccess() {
         ScheduledNotification notification = new ScheduledNotification();
-        notification.setId(1L);
+        notification.setId("2");
         notification.setUserId(1L);
         notification.setCityName("São Paulo");
         notification.setCityId("12345");
@@ -61,9 +63,9 @@ class ScheduledNotificationProcessorTest {
         processor.processScheduledNotifications();
 
         verify(notificationPublisherService).publishNotification(argThat(msg ->
-                msg.getScheduledNotificationId().equals(1L)
+                msg.getScheduledNotificationId().equals("2")
                         && msg.getUserId().equals(1L)
-                        && msg.getForecast() == forecast
+                        && msg.getForecast().equals(forecast)
                         && msg.getWaveForecast() == null
         ));
 
@@ -75,7 +77,7 @@ class ScheduledNotificationProcessorTest {
     @Test
     void testProcessScheduledNotificationsFailure() {
         ScheduledNotification notification = new ScheduledNotification();
-        notification.setId(2L);
+        notification.setId("2");
         notification.setUserId(2L);
         notification.setCityName("Rio de Janeiro");
         notification.setCityId("67890");
@@ -93,7 +95,7 @@ class ScheduledNotificationProcessorTest {
         processor.processScheduledNotifications();
 
         verify(producerDeadLetterService).sendToDeadLetter(argThat(msg ->
-                msg.getScheduledNotificationId().equals(2L)
+                msg.getScheduledNotificationId().equals("2")
                         && msg.getUserId().equals(2L)
                         && msg.getForecast() == null
                         && msg.getWaveForecast() == null

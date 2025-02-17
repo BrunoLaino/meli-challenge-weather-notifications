@@ -12,9 +12,9 @@ Este projeto foi desenvolvido como parte de um desafio técnico para enviar noti
 3. [Fluxo Resumido](#fluxo-resumido)
 4. [Serviços e Pastas](#serviços-e-pastas)
 5. [Como Executar](#como-executar)
-   - [Requisitos](#requisitos)
-   - [Executando com Docker Compose](#executando-com-docker-compose)
-   - [Acesso aos Serviços](#acesso-aos-serviços)
+    - [Requisitos](#requisitos)
+    - [Executando com Docker Compose](#executando-com-docker-compose)
+    - [Acesso aos Serviços](#acesso-aos-serviços)
 6. [Principais Endpoints](#principais-endpoints)
 7. [Melhorias Futuras](#melhorias-futuras)
 8. [Contribuindo](#contribuindo)
@@ -39,7 +39,7 @@ O objetivo é criar uma solução para **agendar e enviar notificações** sobre
 - **OpenFeign** (comunicação com API externa)
 - **RabbitMQ** (fila de mensageria)
 - **Redis** (cache de previsões climáticas)
-- **PostgreSQL** (persistência de dados)
+- **MongoDB** (persistência de dados)
 - **Docker Compose** (orquestração local)
 
 ---
@@ -55,30 +55,30 @@ A solução está organizada em **microserviços** independentes dentro de um ú
 ## Fluxo Resumido
 
 1. **Criação do Agendamento**: O cliente faz `POST` para **api-notifications**, informando dados da cidade e do horário de envio.
-2. **Persistência**: O microserviço **api-notifications** insere o registro em `scheduled_notifications` no **PostgreSQL**.
-3. **Leitura de Agendamentos**: Periodicamente (a cada 1 minuto), o **schedule-worker** lê os agendamentos com horário vencido e prepara a notificação (obtendo dados do CPTEC se necessário).
+2. **Persistência**: O microserviço **api-notifications** insere o registro em `scheduled_notifications` no **MongoDB**.
+3. **Leitura de Agendamentos**: Periodicamente (a cada 1 minuto), o **schedule-worker** lê os registros em `scheduled_notifications` cujo horário venceu e prepara a notificação (obtendo dados do CPTEC se necessário).
 4. **Publicação da Notificação**: O **schedule-worker** posta a mensagem de notificação (ou de erro) no **RabbitMQ**.
 5. **Envio de Notificações**: O **notification-sender** consome a fila, verifica se o usuário está opt-out e, caso contrário, envia a notificação via **WebSocket**.
-6. **Erros e Dead Letter Queue**: Em caso de falha, mensagens problemáticas são enviadas à *Dead Letter Queue* e registradas na tabela `dead_letter_records`.
+6. **Erros e Dead Letter Queue**: Em caso de falha, as mensagens problemáticas são enviadas à *Dead Letter Queue* e registradas na collection `dead_letter_records` no **MongoDB**.
 
 ---
 
 ## Principais Endpoints
 
 1. **Agendar Notificação**
-   - `POST /notifications/schedule`
-   - **Body Exemplo**:
-     ```json
-     {
-       "userId": 0,
-       "when": "2025-02-17T12:53:55.187Z",
-       "cityName": "string",
-       "cityId": "string",
-       "litoranea": true
-     }
-     ```
+    - `POST /notifications/schedule`
+    - **Body Exemplo**:
+      ```json
+      {
+        "userId": 0,
+        "when": "2025-02-17T12:53:55.187Z",
+        "cityName": "string",
+        "cityId": "string",
+        "litoranea": true
+      }
+      ```
 2. **Opt-out de Usuário**
-   - `POST /notifications/users/{userId}/opt-out`
+    - `POST /notifications/users/{userId}/opt-out`
 
 ---
 
@@ -101,7 +101,7 @@ A solução está organizada em **microserviços** independentes dentro de um ú
    docker-compose up --build
    ```
    Isso iniciará os seguintes serviços:
-    - PostgreSQL (localhost:5432)
+    - MongoDB (localhost:27017)
     - RabbitMQ (localhost:5672, console em localhost:15672)
     - Redis (localhost:6379)
     - API Notifications (localhost:8080)
@@ -116,7 +116,7 @@ A solução está organizada em **microserviços** independentes dentro de um ú
     - `GET /notifications?userId={id}` (listar notificações enviadas)
 
 - **RabbitMQ Management** (http://localhost:15672, usuário: guest, senha: guest)
-- 
+-
 - **Swagger** (http://localhost:8080/swagger-ui/index.html#/)
 
 ---

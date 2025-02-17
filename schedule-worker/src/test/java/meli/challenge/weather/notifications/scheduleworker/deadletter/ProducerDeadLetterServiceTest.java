@@ -1,6 +1,6 @@
 package meli.challenge.weather.notifications.scheduleworker.deadletter;
+
 import meli.challenge.weather.notifications.scheduleworker.config.RabbitConfig;
-import meli.challenge.weather.notifications.scheduleworker.deadletter.ProducerDeadLetterService;
 import meli.challenge.weather.notifications.scheduleworker.model.dto.DeadLetterRecordDTO;
 import meli.challenge.weather.notifications.scheduleworker.model.dto.NotificationMessage;
 import org.junit.jupiter.api.Test;
@@ -10,7 +10,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+
 import java.time.LocalDateTime;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;

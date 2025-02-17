@@ -10,7 +10,7 @@ import java.io.Serializable;
 @AllArgsConstructor
 @NoArgsConstructor
 public class NotificationMessage implements Serializable {
-    private Long scheduledNotificationId;
+    private String scheduledNotificationId;
     private Long userId;
     private CityWeatherForecast forecast;
     private WaveForecast waveForecast;

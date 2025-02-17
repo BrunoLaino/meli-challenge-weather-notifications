@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ScheduledNotificationDTO {
-    private Long id;
+    private String id;
     private Long userId;
     private String cityId;
     private LocalDateTime scheduledTime;

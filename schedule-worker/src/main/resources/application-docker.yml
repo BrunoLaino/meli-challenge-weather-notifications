@@ -7,27 +7,20 @@ spring:
       enabled: false
   main:
     allow-bean-definition-overriding: true
-  datasource:
-    url: jdbc:postgresql://localhost:5432/notificationdb
-    username: admin
-    password: admin
-    driver-class-name: org.postgresql.Driver
-  jpa:
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-  rabbitmq:
-    host: localhost
-    port: 5672
-    username: guest
-    password: guest
   data:
+    mongodb:
+      host: mongodb
+      port: 27017
+      database: notificationdb
     redis:
       host: redis
       port: 6379
+
+  rabbitmq:
+    host: rabbitmq
+    port: 5672
+    username: guest
+    password: guest
 
 feign:
   client:

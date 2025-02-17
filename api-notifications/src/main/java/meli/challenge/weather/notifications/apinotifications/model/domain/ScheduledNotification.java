@@ -1,22 +1,21 @@
 package meli.challenge.weather.notifications.apinotifications.model.domain;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "scheduled_notifications")
+@Document(collection = "scheduled_notifications")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class ScheduledNotification {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
     private Long userId;
     private String cityName;
@@ -25,5 +24,4 @@ public class ScheduledNotification {
     private LocalDateTime scheduledTime;
     private boolean sent;
     private boolean failed;
-
 }

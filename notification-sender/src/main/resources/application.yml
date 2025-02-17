@@ -5,18 +5,11 @@ spring:
   devtools:
     restart:
       enabled: false
-  datasource:
-    url: jdbc:postgresql://localhost:5432/notificationdb
-    username: admin
-    password: admin
-    driver-class-name: org.postgresql.Driver
-  jpa:
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-    hibernate:
-      ddl-auto: update
-    show-sql: true
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: notificationdb
   rabbitmq:
     host: localhost
     port: 5672
