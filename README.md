@@ -116,7 +116,6 @@ A solução está organizada em **microserviços** independentes dentro de um ú
     - `GET /notifications?userId={id}` (listar notificações enviadas)
 
 - **RabbitMQ Management** (http://localhost:15672, usuário: guest, senha: guest)
--
 - **Swagger** (http://localhost:8080/swagger-ui/index.html#/)
 
 ---
